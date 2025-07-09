@@ -1,0 +1,231 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #222;
+    background: #f5f5f5;
+    min-height: 100vh;
+    position: relative;
+}
+
+.bg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80') no-repeat center center/cover;
+    opacity: 0.18;
+}
+
+.container.card {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 4rem auto;
+    padding: 2.5rem 2rem 2rem 2rem;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(45, 156, 219, 0.12), 0 1.5px 6px rgba(39, 174, 96, 0.08);
+    text-align: center;
+}
+
+.logo-circle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2D9CDB;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #27AE60;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.file-upload {
+    margin-bottom: 1.5rem;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.file-label {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background-color: #2D9CDB;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    transition: background 0.3s;
+}
+
+.file-label:hover {
+    background-color: #217dbb;
+}
+
+.button {
+    display: inline-block;
+    padding: 0.6rem 1.5rem;
+    background-color: #27AE60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.08);
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.button:hover {
+    background-color: #219150;
+    box-shadow: 0 4px 16px rgba(39, 174, 96, 0.15);
+}
+
+.results-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2D9CDB;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(45,156,219,0.04);
+}
+
+th, td {
+    padding: 1rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 1.08em;
+}
+
+th {
+    background-color: #f2faff;
+    color: #222;
+    font-weight: 600;
+}
+
+tr.genuine {
+    background-color: #eafaf1;
+}
+
+tr.fake {
+    background-color: #faeaea;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.button.secondary {
+    background-color: #95a5a6;
+}
+
+.button.secondary:hover {
+    background-color: #7f8c8d;
+}
+
+/* Loading Spinner Styles */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.spinner-outer {
+    background: rgba(255,255,255,0.98);
+    border-radius: 50%;
+    box-shadow: 0 4px 32px rgba(45,156,219,0.18), 0 1.5px 6px rgba(39,174,96,0.10);
+    padding: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    min-width: 180px;
+    min-height: 180px;
+}
+
+.spinner-container {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    width: 110px;
+    height: 110px;
+    border: 8px solid #e0e0e0;
+    border-top: 8px solid #2D9CDB;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    box-sizing: border-box;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #2D9CDB;
+    font-size: 2.3em;
+    font-weight: 800;
+    text-shadow: 0 2px 8px #fff, 0 0px 12px #2D9CDB22;
+    background: rgba(255,255,255,0.85);
+    border-radius: 12px;
+    padding: 0.15em 0.5em;
+    box-shadow: 0 2px 8px rgba(45,156,219,0.10);
+}
+
+.loading-overlay p {
+    color: white;
+    font-size: 1.2em;
+    text-align: center;
+    margin-top: 20px;
+    text-shadow: 0 2px 8px #000;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

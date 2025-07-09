@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Verification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-overlay"></div>
+    <div class="container card">
+        <div class="logo-circle">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="24" fill="#2D9CDB"/>
+                <path d="M14 28L22 36L34 16" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1>Signature Verification System</h1>
+        <p class="subtitle">Upload a signature sheet to verify signatures</p>
+        <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+            <div class="file-upload">
+                <input type="file" name="file" id="file" accept=".png,.jpg,.jpeg,.pdf" required>
+                <label for="file" class="file-label">Choose a file</label>
+            </div>
+            <button type="submit" class="button">Upload and Verify</button>
+        </form>
+    </div>
+
+    <!-- Loading Spinner Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner-outer">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <div class="progress-text">0%</div>
+            </div>
+        </div>
+        <p>Processing signatures... This may take a few moments.</p>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function() {
+            const overlay = document.getElementById('loadingOverlay');
+            const progressText = overlay.querySelector('.progress-text');
+            overlay.style.display = 'flex';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 1;
+                progressText.textContent = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                }
+            }, 50);
+        });
+    </script>
+</body>
+</html>
+
+<!--
+activate the virtual environment:
+
+         venv\Scripts\activate
+
+or
+
+        .\env\Scripts\activate
+
+run the app:
+
+        python app.py
+
+
+
+
+-->

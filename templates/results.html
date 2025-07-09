@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-overlay"></div>
+    <div class="container card">
+        <h1 class="results-title">Signature Verification Results</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Student's Register Code</th>
+                    <th>Status</th>
+                    <th>Confidence (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr class="{{ 'genuine' if result.is_genuine else 'fake' }}">
+                    <td>{{ result.student_code }}</td>
+                    <td>{{ 'Genuine' if result.is_genuine else 'Fake' }}</td>
+                    <td>{{ "%.2f"|format(result.confidence) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="actions">
+            <a href="{{ url_for('download_csv') }}" class="button">Download CSV</a>
+            <a href="{{ url_for('index') }}" class="button secondary">Back to Upload</a>
+        </div>
+    </div>
+</body>
+</html>

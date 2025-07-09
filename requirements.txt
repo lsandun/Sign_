@@ -1,0 +1,205 @@
+flask
+opencv-python
+pytesseract
+tensorflow
+pandas
+numpy
+Pillow
+ultralytics
+
+def absolute_difference(x, y):
+    import tensorflow.keras.backend as K
+    return K.abs(x - y)
+
+def confidence_penalty_loss(y_true, y_pred):
+    # Your custom loss implementation
+    pass
+
+custom_objects = {
+    'absolute_difference': absolute_difference,
+    'confidence_penalty_loss': confidence_penalty_loss
+}
+
+verif_model = tf.keras.models.load_model('models/signature_verification_model.keras', custom_objects=custom_objects)
+
+print("Detected registration codes:", reg_codes)
+print("Number of signatures detected:", len(signature_imgs))
+print("Results list:", results_list)
+
+from ultralytics import YOLO
+import cv2
+import os
+import pytesseract
+import re
+import numpy as np
+import pandas as pd
+from flask import Flask, request, send_file, redirect, url_for
+from werkzeug.utils import secure_filename
+from tensorflow.keras.models import load_model
+
+# --- CONFIG ---
+UPLOAD_FOLDER = 'uploads'
+DATASET_FOLDER = 'DATASET'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
+YOLO_MODEL_PATH = 'models/best.pt'
+SIG_VERIF_MODEL_PATH = 'models/signature_verification_model.keras'
+
+# --- FLASK APP ---
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# --- Ensure upload folder exists ---
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# --- Load models (do this once) ---
+yolo_model = YOLO(YOLO_MODEL_PATH)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_signatures(image_path, output_dir='uploads'):
+    """
+    Detects signatures and registration codes in the image using YOLOv8.
+    Crops and saves each detected region, returns list of (path, class_id, bbox).
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    results = yolo_model(image_path)
+    crops = []
+    img = cv2.imread(image_path)
+    for i, box in enumerate(results[0].boxes):
+        cls = int(box.cls[0])
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        crop_img = img[y1:y2, x1:x2]
+        label = 'regcode' if cls == 0 else 'signature'
+        crop_path = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(image_path))[0]}_{label}_{i}.png")
+        cv2.imwrite(crop_path, crop_img)
+        if not os.path.exists(crop_path):
+            print(f"Failed to save crop: {crop_path}")
+        else:
+            crops.append((crop_path, cls, (x1, y1, x2, y2)))
+    return crops
+
+def extract_registration_code(image_path):
+    if not os.path.exists(image_path):
+        print(f"File not found: {image_path}")
+        return None
+    img = cv2.imread(image_path)
+    text = pytesseract.image_to_string(img)
+    # Use regex to extract registration code pattern
+    match = re.search(r'SEU[\/_][A-Z]{2}[\/_]\d{2}[\/_][A-Z]{2}[\/_]\d{3}', text.replace(' ', '').replace('-', ''))
+    if match:
+        return match.group(0).replace('/', '_').replace('-', '_')
+    return None
+
+def preprocess_image(image_path, target_size=(64, 64)):
+    if not os.path.exists(image_path):
+        print(f"File not found: {image_path}")
+        return None
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.resize(img, target_size)
+    img = img.astype('float32') / 255.0
+    img = np.expand_dims(img, axis=-1)
+    return img
+
+def verify_signature(model, ref_image_path, test_image_path, threshold=0.3):
+    if not os.path.exists(ref_image_path) or not os.path.exists(test_image_path):
+        print(f"Missing file: {ref_image_path} or {test_image_path}")
+        return False, 0
+    ref_image = preprocess_image(ref_image_path)
+    test_image = preprocess_image(test_image_path)
+    ref_image = np.expand_dims(ref_image, axis=0)
+    test_image = np.expand_dims(test_image, axis=0)
+    similarity = model.predict([ref_image, test_image])[0][0]
+    is_genuine = similarity > threshold
+    return is_genuine, similarity * 100
+
+def verify_with_student_folder(model, test_sig_path, student_folder, threshold=0.3):
+    genuine_folder = os.path.join(student_folder, 'genuine')
+    fake_folder = os.path.join(student_folder, 'fake')
+    best_conf = 0
+    is_genuine = False
+    # Compare with all genuine samples
+    if not os.path.exists(genuine_folder):
+        return False, 0
+    for ref_img in os.listdir(genuine_folder):
+        ref_path = os.path.join(genuine_folder, ref_img)
+        print(f"Trying to read: {ref_path}")
+        is_g, conf = verify_signature(model, ref_path, test_sig_path, threshold)
+        if conf > best_conf:
+            best_conf = conf
+            is_genuine = is_g
+    return is_genuine, best_conf
+
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return "No file part"
+        file = request.files['file']
+        if file.filename == '':
+            return "No selected file"
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+            # 1. Detect signatures and reg codes
+            crops = extract_signatures(file_path, output_dir=app.config['UPLOAD_FOLDER'])
+            regcode_crops = [c for c in crops if c[1] == 0]
+            signature_crops = [c for c in crops if c[1] == 1]
+
+            results = []
+            for sig_path, _, sig_bbox in signature_crops:
+                if not os.path.exists(sig_path):
+                    print(f"Signature crop missing: {sig_path}")
+                    continue
+
+                # Find the closest regcode crop (by bbox proximity)
+                regcode = None
+                min_dist = float('inf')
+                for reg_path, _, reg_bbox in regcode_crops:
+                    if not os.path.exists(reg_path):
+                        print(f"Regcode crop missing: {reg_path}")
+                        continue
+                    dist = abs(sig_bbox[1] - reg_bbox[1])
+                    if dist < min_dist:
+                        min_dist = dist
+                        regcode = extract_registration_code(reg_path)
+                if not regcode:
+                    print("No registration code found for signature.")
+                    continue
+
+                # Normalize regcode for folder name (replace / with _)
+                regcode_folder = regcode.replace('/', '_')
+                student_folder = os.path.join(DATASET_FOLDER, regcode_folder)
+                print(f"Student folder: {student_folder}")
+                if not os.path.exists(student_folder):
+                    print(f"Student folder missing: {student_folder}")
+                    continue
+
+                # Only compare with this student's folder!
+                is_genuine, confidence = verify_with_student_folder(verif_model, sig_path, student_folder)
+                results.append({
+                    'registration_code': regcode,
+                    'is_genuine': is_genuine,
+                    'confidence': confidence
+                })
+
+            # Export to CSV
+            df = pd.DataFrame(results)
+            csv_path = os.path.join(app.config['UPLOAD_FOLDER'], 'results.csv')
+            df.to_csv(csv_path, index=False)
+            return send_file(csv_path, as_attachment=True)
+    return '''
+    <!doctype html>
+    <title>Upload Signature Sheet</title>
+    <h1>Upload Signature Sheet (PDF or Image)</h1>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
