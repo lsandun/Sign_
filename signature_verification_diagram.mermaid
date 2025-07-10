@@ -1,0 +1,55 @@
+flowchart TD
+    A[🏁 Start] --> B[📄 Upload Signature Sheet]
+    B --> C{📋 File Valid?}
+    C -->|❌ No| D[🚫 Return Error]
+    C -->|✅ Yes| E[💾 Save File]
+    E --> F[🤖 Load YOLO Model]
+    F --> G[🔍 Detect Objects]
+    G --> H[🔤 Extract Registration Codes]
+    G --> I[✍️ Extract Signatures]
+    
+    H --> J[📖 OCR Processing]
+    J --> K[✅ Validate SEU Format]
+    K --> L{🎯 Valid Code?}
+    L -->|❌ No| M[⏭️ Skip Signature]
+    L -->|✅ Yes| N[📁 Find Student Folder]
+    
+    I --> O[🔧 Preprocess Signature]
+    N --> P{👤 Student Exists?}
+    P -->|❌ No| Q[❓ Mark as Unknown]
+    P -->|✅ Yes| R[📚 Load Genuine Signatures]
+    
+    O --> S[🔍 Compare with References]
+    R --> S
+    S --> T[📊 Calculate Similarity]
+    T --> U{📈 Similarity > Threshold?}
+    U -->|✅ Yes| V[✅ Mark as Genuine]
+    U -->|❌ No| W[❌ Mark as Fake]
+    
+    V --> X[💾 Store Result]
+    W --> X
+    M --> X
+    Q --> X
+    
+    X --> Y{🔄 More Signatures?}
+    Y -->|✅ Yes| H
+    Y -->|❌ No| Z[📊 Generate CSV]
+    Z --> AA[📋 Display Results]
+    AA --> BB[🏁 End]
+    
+    D --> BB
+    
+    %% Styling
+    classDef startEnd fill:#e1f5fe,stroke:#0277bd,stroke-width:3px
+    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef success fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef storage fill:#f1f8e9,stroke:#689f38,stroke-width:2px
+    
+    class A,BB startEnd
+    class B,E,F,G,H,I,J,K,N,O,R,S,T,Z,AA process
+    class C,L,P,U,Y decision
+    class D,M,Q,W error
+    class V success
+    class X storage
