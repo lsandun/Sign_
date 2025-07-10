@@ -1,0 +1,55 @@
+sequenceDiagram
+    participant U as 👤 User
+    participant F as 🌐 Flask App
+    participant Y as 🤖 YOLO Model
+    participant O as 📖 OCR Engine
+    participant V as 🔍 Verification
+    participant D as 📁 Dataset
+    participant C as 📊 CSV Generator
+
+    Note over U,C: 📋 Signature Verification Process
+    
+    U->>+F: 📄 Upload signature sheet
+    F->>F: 💾 Save file to uploads/
+    F->>+Y: 🔍 Detect signatures & regcodes
+    Y-->>-F: 📦 Return bounding boxes
+    
+    Note over F: 🔄 Processing each detected signature
+    
+    loop 🔁 For each detected signature
+        F->>+O: 🔤 Extract registration code
+        O-->>-F: 🎯 Return SEU/IS/20/XX/XXX
+        
+        alt ✅ Valid registration code
+            F->>+D: 👤 Find student folder
+            D-->>-F: 📚 Return genuine signatures
+            
+            Note over F,V: 🔍 Signature comparison process
+            
+            loop 🔄 For each genuine signature
+                F->>+V: 🆚 Compare signatures
+                V-->>-F: 📊 Return similarity score
+            end
+            
+            F->>F: 🎯 Determine authenticity
+            Note right of F: Based on similarity<br/>threshold analysis
+            
+        else ❌ Invalid registration code
+            F->>F: ⏭️ Skip signature
+            Note right of F: Mark as invalid<br/>registration code
+        end
+    end
+    
+    Note over F,C: 📊 Results generation
+    
+    F->>+C: 📋 Export results
+    C-->>-F: ✅ CSV ready
+    F-->>-U: 📋 Display results page
+    
+    Note over U,F: 💾 File download
+    
+    U->>+F: 📥 Download CSV
+    F-->>-U: 📄 Send CSV file
+
+    %% Styling
+    %%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#e3f2fd', 'primaryTextColor': '#1565c0', 'primaryBorderColor': '#1976d2', 'lineColor': '#42a5f5', 'secondaryColor': '#f3e5f5', 'tertiaryColor': '#fff3e0'}}}%%
